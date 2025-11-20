@@ -1,0 +1,5 @@
+selenium
+beatiflsoup4
+pandas
+folium
+requests
