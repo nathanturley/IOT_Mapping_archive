@@ -31,7 +31,7 @@ def get_offline_nodes(url, wait_time=5, headless=True):
     # Initialize the driver
     driver = webdriver.Chrome(options=chrome_options)
 
-    driver.set_page_load_timeout(10) # seconds
+    driver.set_page_load_timeout(30) # seconds - increased for CI environments
     MAX_RETRIES = 2
 
     # Retry logic for loading the page
@@ -42,14 +42,14 @@ def get_offline_nodes(url, wait_time=5, headless=True):
         except TimeoutException:
             if attempt == MAX_RETRIES:
                 print(f"Failed to load page after {MAX_RETRIES} attempts.")
-                return None
+                return []
             else:
                 print(f"Timeout loading page, retrying ({attempt}/{MAX_RETRIES})...")
 
     try:
 
         # Wait for JavaScript to load the content
-        print("Loading page, please wait...")
+        print(f"Loading page, waiting {wait_time} seconds...")
         time.sleep(wait_time)
 
         # Get the rendered HTML
@@ -59,6 +59,8 @@ def get_offline_nodes(url, wait_time=5, headless=True):
 
         # 1. Find all areas where status text is "Offline"
         offline_blocks = soup.find_all("div", class_="n_value")
+        
+        print(f"Found {len(offline_blocks)} status blocks")
 
         for block in offline_blocks:
             status_text = block.get_text(strip=True)
@@ -66,14 +68,22 @@ def get_offline_nodes(url, wait_time=5, headless=True):
             if status_text == "Offline":
                 # 2. Move up to the card container
                 card = block.find_parent("div", class_="n_card")
+                
+                if not card:
+                    print("Warning: Could not find parent card for offline block")
+                    continue
 
                 # 3. Extract the name (inside .m_content) - get only the first text before <br>
                 name_elem = card.find("div", class_="m_content")
                 # Get only the first text node (before the first <br> tag)
-                name = name_elem.contents[0].strip() if name_elem.contents else "Unknown"
+                name = name_elem.contents[0].strip() if name_elem and name_elem.contents else "Unknown"
 
                 # 4. Extract the node ID (inside .n2_valueSmall)
                 small = card.find("div", class_="n2_valueSmall")
+                if not small:
+                    print(f"Warning: Could not find node ID for {name}")
+                    continue
+                    
                 text = small.get_text(" ", strip=True)
 
                 # Split on "Node ID:" and extract just the ID part (before "Type:")
@@ -83,7 +93,9 @@ def get_offline_nodes(url, wait_time=5, headless=True):
                     node_id = "Unknown"
 
                 results.append((name, node_id))
+                print(f"Found offline node: {name} ({node_id})")
 
+        print(f"Total offline nodes found: {len(results)}")
         return results
     
     finally:

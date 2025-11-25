@@ -744,10 +744,17 @@ def main():
         try:
             print("Fetching offline nodes from ThingsBoard...")
             URL = "https://live2.innovateauckland.nz/dashboard/baafc030-dfa9-11ec-bc22-bb13277b57e1?publicId=8d688430-d497-11ec-92a2-f938b249c783"
-            offline_nodes = thingsboard_scraper.get_offline_nodes(URL, wait_time=5, headless=True)
-            print(f"Found {len(offline_nodes)} offline nodes")
+            # Use longer wait time in CI environments (detect by checking for CI env var)
+            wait_time = 10 if os.environ.get('CI') else 5
+            offline_nodes = thingsboard_scraper.get_offline_nodes(URL, wait_time=wait_time, headless=True)
+            if offline_nodes:
+                print(f"Found {len(offline_nodes)} offline nodes")
+            else:
+                print("No offline nodes found")
         except Exception as e:
             print(f"WARNING: Failed to fetch offline nodes: {e}")
+            import traceback
+            traceback.print_exc()
             offline_nodes = None
 
     make_map(devices, edges_xy, args.out,
