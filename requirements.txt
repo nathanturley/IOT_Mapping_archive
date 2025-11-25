@@ -4,3 +4,4 @@ pandas
 folium
 openpyxl
 requests
+webdriver-manager

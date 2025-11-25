@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
 
@@ -28,8 +30,9 @@ def get_offline_nodes(url, wait_time=5, headless=True):
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--window-size=1920,1080')
 
-    # Initialize the driver
-    driver = webdriver.Chrome(options=chrome_options)
+    # Initialize the driver with webdriver-manager for automatic driver management
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     driver.set_page_load_timeout(30) # seconds - increased for CI environments
     MAX_RETRIES = 2
