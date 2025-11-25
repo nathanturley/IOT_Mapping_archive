@@ -1,0 +1,49 @@
+name: Build routes map
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes (UTC)
+  workflow_dispatch: {}       # allow manual runs from Actions tab
+
+permissions:
+  contents: write             # allow pushing changes back to the repo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Chrome and chromedriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run main script to generate routes_map.html
+        run: python main.py
+
+      - name: Commit and push routes_map.html if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Only add/commit if the file actually changed
+          if git status --porcelain routes_map.html | grep .; then
+            git add routes_map.html
+            git commit -m "Update routes_map.html"
+            git push
+          else
+            echo "No changes to routes_map.html"
+          fi
