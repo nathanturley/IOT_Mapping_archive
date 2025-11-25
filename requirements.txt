@@ -1,5 +1,6 @@
 selenium
-beatiflsoup4
+beautifulsoup4
 pandas
 folium
+openpyxl
 requests
